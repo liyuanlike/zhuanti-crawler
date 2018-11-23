@@ -1,0 +1,123 @@
+* {
+    margin: 0;
+    padding: 0;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none
+}
+
+fieldset, img {
+    border: 0 !important
+}
+
+
+h1, h2, h3, h4, h5, h6 {
+    font-size: 100%
+}
+
+body, html {
+    width: 100%;
+    text-align: center;
+    font-family: "Microsoft YaHei", Arial, Helvetica, sans-serif;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent
+}
+
+a, a:hover, a:link, a:visited {
+    text-decoration: none
+}
+
+@media screen and (min-width: 212px) {
+    html {
+        font-size: 9.09px
+    }
+}
+
+@media screen and (min-width: 319px) {
+    html {
+        font-size: 13.65px
+    }
+}
+
+@media screen and (min-width: 359px) {
+    html {
+        font-size: 15.36px
+    }
+}
+
+@media screen and (min-width: 374px) {
+    html {
+        font-size: 16px
+    }
+}
+
+@media screen and (min-width: 383px) {
+    html {
+        font-size: 16.38px
+    }
+}
+
+@media screen and (min-width: 399px) {
+    html {
+        font-size: 17.07px
+    }
+}
+
+@media screen and (min-width: 414px) {
+    html {
+        font-size: 17.71px
+    }
+}
+
+@media screen and (min-width: 423px) {
+    html {
+        font-size: 18.09px
+    }
+}
+
+@media screen and (min-width: 479px) {
+    html {
+        font-size: 20.48px
+    }
+}
+
+@media screen and (min-width: 539px) {
+    html {
+        font-size: 23.04px
+    }
+}
+
+@media screen and (min-width: 639px) {
+    html {
+        font-size: 27.31px
+    }
+}
+
+div {
+    margin: 2px auto;
+}
+
+.alert {
+    display: none;
+    position: fixed;
+    top: 6%;
+    left: 80%;
+    min-width: 200px;
+    max-width: 600px;
+    transform: translate(-50%,-50%);
+    z-index: 99999;
+    text-align: center;
+    padding: 15px;
+    border-radius: 3px;
+}
+.alert-success {
+    color: #3c763d;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+}
+
+

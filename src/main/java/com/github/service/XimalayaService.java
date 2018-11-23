@@ -37,25 +37,20 @@
 package com.github.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.github.event.TaskProcessEvent;
+import com.github.model.Feedback;
 import com.github.util.RegexUtil;
-import com.github.util.Utils;
-import org.apache.commons.lang.RandomStringUtils;
-import org.springframework.http.HttpEntity;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.WebUtils;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 
@@ -64,9 +59,10 @@ public class XimalayaService {
 
     @Resource private RestTemplate restTemplate;
     @Resource private ZhuantiService zhuantiService;
+    @Resource private ApplicationContext applicationContext;
 
-
-    public void crawl(String uid, String url) {
+    @Async
+    public Feedback crawl(String uid, String url, HttpHeaders headers) {
 
         String responseContent = restTemplate.getForObject(url, String.class);
         String title = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h2>", responseContent) + "【有声版】";
@@ -74,10 +70,14 @@ public class XimalayaService {
 
         // 创建专题
         String courseId = zhuantiService.createZhuanti(uid, title, coverUrl);
-        String chapterId = zhuantiService.createChapter(courseId, "", title, "1");
+        String chapterId = zhuantiService.createChapter(courseId, "", title, "1", headers);
+        Feedback feedback = new Feedback(url, title, courseId);
 
 
         try {
+
+            List<Map<String, String>> taskList = new ArrayList<>();
+
             Matcher matcher = RegexUtil.matcher("<li class=.+?</li>", responseContent);
             while (matcher.find()) {
 
@@ -85,11 +85,14 @@ public class XimalayaService {
                 String name = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h4>", liContent);
                 String soundUrl = RegexUtil.getGroup1MatchContent("sound_url='(.+?)'", liContent);
 
-                zhuantiService.handleChapterContent(uid, courseId, chapterId, name, soundUrl);
+                Map<String, String> task = new HashMap<>();
+                task.put("name", name);
+                task.put("soundUrl", soundUrl);
+                taskList.add(task);
             }
 
-            String albumId = url.substring(url.lastIndexOf("/") + 1);
 
+            String albumId = url.substring(url.lastIndexOf("/") + 1);
             int page = 2;
             String pageUrl = "http://m.ximalaya.com/album/more_tracks?url=%2Falbum%2Fmore_tracks&aid={albumId}&page={page}";
             do {
@@ -106,16 +109,34 @@ public class XimalayaService {
                     String name = RegexUtil.getGroup1MatchContent("<h4.+?>(.+?)</h4>", liContent);
                     String soundUrl = RegexUtil.getGroup1MatchContent("sound_url='(.+?)'", liContent);
 
-                    zhuantiService.handleChapterContent(uid, courseId, chapterId, name, soundUrl);
+                    Map<String, String> task = new HashMap<>();
+                    task.put("name", name);
+                    task.put("soundUrl", soundUrl);
+                    taskList.add(task);
                 }
 
 
             } while (page > 0);
 
+
+            for (int i = 1; i <= taskList.size(); i++) {
+                feedback.setCurrent(i);
+                feedback.setCount(taskList.size());
+                applicationContext.publishEvent(new TaskProcessEvent(this, feedback));
+
+                Map<String, String> task = taskList.get(i);
+                zhuantiService.handleChapterContent(uid, courseId, chapterId, task.get("name"), task.get("soundUrl"), headers);
+            }
+
+
+            feedback.setStatus(1);
+
         } catch (Exception e) {
+            feedback.setStatus(0);
             zhuantiService.deleteZhuanti(courseId);
         }
 
+        return feedback;
     }
 
 }

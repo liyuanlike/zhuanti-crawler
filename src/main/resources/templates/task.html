@@ -13,25 +13,27 @@
 </head>
 <body>
 
-<div th:if="${user ne null}">
-<h2>当前账户信息:</h2>
-<h6 th:text="${user}"></h6>
+<h2>添加抓取任务:</h2>
+
+<input id="taskUrl" type="text" style="width: 600px; height: 80px; font-size: large"/>
+<input id="submit" type="button" style="width: 120px; height: 80px; font-size: large" value="提交"/>
+
+<h2>任务抓取情况:</h2>
+<div>
+    <h2>抓取中。。。</h2>
 </div>
 
-
-<h2 th:if="${user ne null}">
-    <div><a href="http://passport2.chaoxing.com/logout.html?refer=http://i.chaoxing.com">切换账户</a></div>
-    <div><a th:href="@{/task}">使用该账户抓取</a></div>
-</h2>
-
-<h2 th:if="${user eq null}">
-    <div><a th:href="@{/logout}">去登录</a></div>
-</h2>
 
 </body>
 <script type="text/javascript" src="//cdn.staticfile.org/jquery/1.12.4/jquery.min.js"></script>
 <script type="text/javascript">
     $(function () {
+        $("#submit").click(function(){
+            var taskUrl = $("#taskUrl").val();
+            $.post("/task/add", {url: taskUrl}, function (data) {
+                console.log(data);
+            });
+        });
     });
 </script>
 </html>

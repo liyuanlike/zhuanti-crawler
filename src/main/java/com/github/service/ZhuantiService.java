@@ -42,6 +42,8 @@ import com.github.util.Utils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.RandomStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -59,7 +61,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.util.List;
 
 
@@ -67,6 +68,7 @@ import java.util.List;
 public class ZhuantiService {
 
     @Resource private RestTemplate restTemplate;
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public List<String> login(String userName, String password, HttpServletRequest request, HttpServletResponse response) {
         String requestUrl = "http://passport2.chaoxing.com/api/login";
@@ -107,7 +109,7 @@ public class ZhuantiService {
         return object.getString("courseid");
     }
 
-    public String createChapter(String courseId, String parentId, String name, String layer) {
+    public String createChapter(String courseId, String parentId, String name, String layer, HttpHeaders headers) {
 
         String url = "http://mooc1.chaoxing.com/edit/createchapter";
 
@@ -117,17 +119,19 @@ public class ZhuantiService {
         body.add("parentid", parentId);
         body.add("layer", layer);
 
-        HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity httpEntity = new HttpEntity(body, headers);
 
         ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, httpEntity, String.class);
+        String content = responseEntity.getBody();
+        logger.info(responseEntity.getHeaders().toString());
+        logger.info(content);
 
-        return JSON.parseObject(responseEntity.getBody()).getString("id");
+        return JSON.parseObject(content).getString("id");
     }
 
-    public void addContent(String courseId, String chapterId, String name, JSONObject sound) {
+    public void addContent(String courseId, String chapterId, String name, JSONObject sound, HttpHeaders headers) {
 
         String url = "http://mooc1.chaoxing.com/edit/savecard";
 
@@ -145,7 +149,6 @@ public class ZhuantiService {
         body.add("nodeid", chapterId);
         body.add("courseid", courseId);
 
-        HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity httpEntity = new HttpEntity(body, headers);
@@ -180,13 +183,13 @@ public class ZhuantiService {
         return jsonObject;
     }
 
-    public void handleChapterContent(String uid, String courseId, String chapterId, String name, String soundUrl) throws IOException {
+    public void handleChapterContent(String uid, String courseId, String chapterId, String name, String soundUrl, HttpHeaders headers) throws IOException {
         // 下载
         JSONObject sound = this.yunpan(uid, soundUrl);
         // 创建章节
-        String contentChapterId = this.createChapter(courseId, chapterId, name, "2");
+        String contentChapterId = this.createChapter(courseId, chapterId, name, "2", headers);
         // 保存内容章节
-        this.addContent(courseId, contentChapterId, name, sound);
+        this.addContent(courseId, contentChapterId, name, sound, headers);
         deleteZhuanti(courseId);
     }
 

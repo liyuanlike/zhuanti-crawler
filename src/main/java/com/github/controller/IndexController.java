@@ -37,35 +37,53 @@
 package com.github.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.github.model.Feedback;
+import com.github.service.XimalayaService;
 import com.github.service.ZhuantiService;
-import com.github.util.RegexUtil;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
-import org.springframework.web.util.WebUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorCompletionService;
 
 @Controller
 @RequestMapping
-public class IndexController {
+public class IndexController implements InitializingBean {
 
 	@Resource private RestTemplate restTemplate;
 	@Resource private ZhuantiService zhuantiService;
+	@Resource private XimalayaService ximalayaService;
+
+	@Resource private Executor executor;
+	private Logger logger = LoggerFactory.getLogger(this.getClass());
+	private static CompletionService<Feedback> completionService = null;
+	@Override
+	public void afterPropertiesSet() {
+		completionService = new ExecutorCompletionService<Feedback>(executor);
+	}
+
 
 	@RequestMapping({"", "/", "index"})
 	public String index(@CookieValue(required = false, value = "UID") String uid, Model model) {
@@ -88,16 +106,22 @@ public class IndexController {
 			cookieList.add(cookie.getName() + "=" + cookie.getValue());
 		}
 		HttpHeaders headers = new HttpHeaders();
-		headers.put(HttpHeaders.SET_COOKIE, cookieList);
+		headers.put(HttpHeaders.COOKIE, cookieList);
 		request.getSession().setAttribute("headers", headers);
+
+		System.err.println(request.getSession().getId());
+		System.err.println(request.getSession().getAttribute("headers"));
 
 		return "task";
 	}
 
-	@RequestMapping("task/add")
-	public String taskAdd(String url) {
-
-		return "task";
+	@ResponseBody
+	@PostMapping("task/add")
+	public String taskAdd(String url, @CookieValue("UID") String uid, HttpServletRequest request) {
+		System.err.println(request.getSession().getId());
+		HttpHeaders headers = (HttpHeaders) request.getSession().getAttribute("headers");
+		ximalayaService.crawl(uid, url, headers);
+		return "success";
 	}
 
 
@@ -110,10 +134,13 @@ public class IndexController {
 
 	@ResponseBody
 	@RequestMapping("t")
-	public Object t(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	public Object t(HttpServletRequest request) throws IOException {
 
-//		System.err.println(zhuantiService.yunpan("http://www.baidu.com/img/bd_logo1.png"));
-//		zhuantiService.login("yaokangming@chaoxing.com", "154518484", request, response);
+		HttpHeaders headers = (HttpHeaders) request.getSession().getAttribute("headers");
+		System.err.println(headers);
+		HttpEntity httpEntity = new HttpEntity(headers);
+		ResponseEntity<String> responseEntity = restTemplate.exchange("http://i.mooc.chaoxing.com/space/index", HttpMethod.GET, httpEntity, String.class);
+		System.err.println(responseEntity.getHeaders());
 
 
 		return "success";

@@ -136,11 +136,7 @@ public class IndexController implements InitializingBean {
 	@RequestMapping("t")
 	public Object t(HttpServletRequest request) throws IOException {
 
-		HttpHeaders headers = (HttpHeaders) request.getSession().getAttribute("headers");
-		System.err.println(headers);
-		HttpEntity httpEntity = new HttpEntity(headers);
-		ResponseEntity<String> responseEntity = restTemplate.exchange("http://i.mooc.chaoxing.com/space/index", HttpMethod.GET, httpEntity, String.class);
-		System.err.println(responseEntity.getHeaders());
+		System.err.println(request.getSession().getId());
 
 
 		return "success";

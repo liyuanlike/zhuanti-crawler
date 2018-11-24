@@ -27,10 +27,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 	@Resource private FastJsonConfig fastJsonConfig;
 
-	@Override
-	public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/**");
-	}
+//	@Override
+//	public void addCorsMappings(CorsRegistry registry) {
+//		registry.addMapping("/**").allowCredentials(true);
+//	}
 
 	@Override
 	public void configurePathMatch(PathMatchConfigurer configurer) {

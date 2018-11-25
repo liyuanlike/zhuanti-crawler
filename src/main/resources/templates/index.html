@@ -20,7 +20,7 @@
 
 
 <h2 th:if="${user ne null}">
-    <div><a href="http://passport2.chaoxing.com/logout.html?refer=http://i.chaoxing.com">切换账户</a></div>
+    <div><a th:href="@{/logout}">切换账户</a></div>
     <div><a th:href="@{/task}">使用该账户抓取</a></div>
     <div><a href="http://yz4.chaoxing.com/subject_creation/SubjectCreationController/subjectCreationIndex" target="_blank">查看我的专题</a></div>
 </h2>

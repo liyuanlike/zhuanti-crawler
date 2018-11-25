@@ -102,10 +102,9 @@ public class ZhuantiService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity httpEntity = new HttpEntity(body, headers);
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, httpEntity, String.class);
 
-
-        JSONObject object = JSONObject.parseObject(restTemplate.postForObject(url, httpEntity, String.class));
-        System.err.println(object);
+        JSONObject object = JSONObject.parseObject(responseEntity.getBody());
         return object.getString("courseid");
     }
 
@@ -120,13 +119,11 @@ public class ZhuantiService {
         body.add("layer", layer);
 
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
         HttpEntity httpEntity = new HttpEntity(body, headers);
 
         ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, httpEntity, String.class);
         String content = responseEntity.getBody();
         logger.info(responseEntity.getHeaders().toString());
-        logger.info(content);
 
         return JSON.parseObject(content).getString("id");
     }
@@ -190,7 +187,6 @@ public class ZhuantiService {
         String contentChapterId = this.createChapter(courseId, chapterId, name, "2", headers);
         // 保存内容章节
         this.addContent(courseId, contentChapterId, name, sound, headers);
-        deleteZhuanti(courseId);
     }
 
     public void deleteZhuanti(String courseId) {

@@ -66,12 +66,12 @@ public class XimalayaService {
 
         String responseContent = restTemplate.getForObject(url, String.class);
         String title = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h2>", responseContent) + "【有声版】";
-        String coverUrl = RegexUtil.getGroup1MatchContent("\"imgUrl\":\"(.+?_web_large.jpg)\"", responseContent);
+        String coverUrl = RegexUtil.getGroup1MatchContent("\"imgUrl\":\"(.+?)\"", responseContent);
 
         // 创建专题
         String courseId = zhuantiService.createZhuanti(uid, title, coverUrl);
         String chapterId = zhuantiService.createChapter(courseId, "", title, "1", headers);
-        Feedback feedback = new Feedback(url, title, courseId);
+        Feedback feedback = new Feedback(url, title, coverUrl, courseId);
 
 
         try {
@@ -120,11 +120,14 @@ public class XimalayaService {
 
 
             for (int i = 1; i <= taskList.size(); i++) {
+
+                Map<String, String> task = taskList.get(i);
+
                 feedback.setCurrent(i);
+                feedback.setCurrentName(task.get("name"));
                 feedback.setCount(taskList.size());
                 applicationContext.publishEvent(new TaskProcessEvent(this, feedback));
 
-                Map<String, String> task = taskList.get(i);
                 zhuantiService.handleChapterContent(uid, courseId, chapterId, task.get("name"), task.get("soundUrl"), headers);
             }
 

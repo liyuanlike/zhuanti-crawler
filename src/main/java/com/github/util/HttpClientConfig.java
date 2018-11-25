@@ -64,12 +64,12 @@ public class HttpClientConfig {
 //				.setProxy()
 				.build();
 
-//		HttpHost proxy = new HttpHost("127.0.0.1", 8888, "HTTP");
-//		HttpRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy); // http代理
+		HttpHost proxy = new HttpHost("127.0.0.1", 8888, "HTTP");
+		HttpRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy); // http代理
 //		HttpRoutePlanner routePlanner = new SystemDefaultRoutePlanner(ProxySelector.getDefault()); // 系统代理
 
 		HttpClientBuilder httpClientBuilder = HttpClients.custom()
-//				.setRoutePlanner(routePlanner)
+				.setRoutePlanner(routePlanner)
 				.setDefaultRequestConfig(requestConfig)
 				.setConnectionManager(poolingConnectionManager())
 				.setKeepAliveStrategy(connectionKeepAliveStrategy());

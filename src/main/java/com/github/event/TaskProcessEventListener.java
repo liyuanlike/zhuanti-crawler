@@ -3,11 +3,16 @@ package com.github.event;
 import com.github.model.Feedback;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.SmartApplicationListener;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
+
 @Component
 public class TaskProcessEventListener implements SmartApplicationListener {
+
+	@Resource private SimpMessagingTemplate messagingTemplate;
 
 	@Override
 	public boolean supportsEventType(Class<? extends ApplicationEvent> eventType) {
@@ -24,7 +29,7 @@ public class TaskProcessEventListener implements SmartApplicationListener {
 	public void onApplicationEvent(ApplicationEvent event) {
 		TaskProcessEvent taskProcessEvent = (TaskProcessEvent) event;
 		Feedback feedback = taskProcessEvent.getFeedback();
-		System.err.println(feedback);
+		messagingTemplate.convertAndSend("/topic/feedback", feedback);
 	}
 
 	@Override

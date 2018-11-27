@@ -123,6 +123,7 @@ public class XimalayaService {
 
                 Map<String, String> task = taskList.get(i);
 
+                feedback.setStatus(2);
                 feedback.setCurrent(i);
                 feedback.setCurrentName(task.get("name"));
                 feedback.setCount(taskList.size());

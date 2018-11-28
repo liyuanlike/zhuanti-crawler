@@ -149,7 +149,7 @@ public class ZhuantiService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity httpEntity = new HttpEntity(body, headers);
-        System.err.println(restTemplate.postForObject(url, httpEntity, String.class));
+        restTemplate.postForObject(url, httpEntity, String.class);
     }
 
     public JSONObject yunpan(String uid, String url) throws IOException {

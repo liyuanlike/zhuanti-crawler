@@ -3,20 +3,17 @@ package com.github.util;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
-import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHeaderElementIterator;
@@ -64,12 +61,12 @@ public class HttpClientConfig {
 //				.setProxy()
 				.build();
 
-		HttpHost proxy = new HttpHost("127.0.0.1", 8888, "HTTP");
-		HttpRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy); // http代理
+//		HttpHost proxy = new HttpHost("127.0.0.1", 8888, "HTTP");
+//		HttpRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy); // http代理
 //		HttpRoutePlanner routePlanner = new SystemDefaultRoutePlanner(ProxySelector.getDefault()); // 系统代理
 
 		HttpClientBuilder httpClientBuilder = HttpClients.custom()
-				.setRoutePlanner(routePlanner)
+//				.setRoutePlanner(routePlanner)
 				.setDefaultRequestConfig(requestConfig)
 				.setConnectionManager(poolingConnectionManager())
 				.setKeepAliveStrategy(connectionKeepAliveStrategy());

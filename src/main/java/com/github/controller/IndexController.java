@@ -37,80 +37,48 @@
 package com.github.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.github.model.Feedback;
 import com.github.service.XimalayaService;
-import com.github.service.ZhuantiService;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
+import org.springframework.web.util.WebUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.StringTokenizer;
+
 
 @Controller
 @RequestMapping
-public class IndexController implements InitializingBean {
+public class IndexController {
 
 	@Resource private RestTemplate restTemplate;
-	@Resource private ZhuantiService zhuantiService;
 	@Resource private XimalayaService ximalayaService;
-
-	@Resource private Executor executor;
-	private Logger logger = LoggerFactory.getLogger(this.getClass());
-	private static CompletionService<Feedback> completionService = null;
-	@Override
-	public void afterPropertiesSet() {
-		completionService = new ExecutorCompletionService<>(executor);
-	}
 
 
 	@RequestMapping({"", "/", "index"})
 	public String index(@CookieValue(required = false, value = "UID") String uid, HttpServletRequest request, Model model) {
 
 		if (StringUtils.isNotEmpty(uid)) {
-
-			HttpHeaders headers = (HttpHeaders) request.getSession().getAttribute("headers");
-			if (headers == null) {
-				List<String> cookieList = new ArrayList<>();
-				Cookie[] cookies = request.getCookies();
-				for (Cookie cookie : cookies) {
-					String name = cookie.getName();
-					if (name.equals("cookiecheck")) {
-						continue;
-					}
-					cookieList.add(name + "=" + cookie.getValue());
-				}
-				headers = new HttpHeaders();
-				headers.put(HttpHeaders.COOKIE, cookieList);
-				request.getSession().setAttribute("headers", headers);
-			}
-
 			JSONObject user = (JSONObject) request.getSession().getAttribute("user");
 			if (user == null) {
 				user = restTemplate.getForObject("http://passport.basicedu.chaoxing.com/user/{uid}/info", JSONObject.class, uid);
 				request.getSession().setAttribute("user", user);
 			}
-
 			model.addAttribute("user", user);
 		}
 
@@ -124,33 +92,85 @@ public class IndexController implements InitializingBean {
 
 	@ResponseBody
 	@PostMapping("task/add")
-	public String taskAdd(String url, @CookieValue("UID") String uid, HttpServletRequest request) {
-		HttpHeaders headers = (HttpHeaders) request.getSession().getAttribute("headers");
-		ximalayaService.crawl(uid, url, headers);
+	public String taskAdd(String urls, @CookieValue("UID") String uid, HttpServletRequest request) {
+
+		HttpHeaders headers = getHttpHeaders(request);
+
+		StringTokenizer stringTokenizer = new StringTokenizer(urls);
+		while(stringTokenizer.hasMoreElements()){
+			String url = stringTokenizer.nextToken();
+			if (StringUtils.isNotEmpty(url)) {
+				ximalayaService.crawl(uid, url.trim(), headers);
+			}
+		}
 		return "success";
 	}
 
 
 	@RequestMapping("logout")
-	public String logout(HttpSession session) {
+	public String logout(HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+		Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (Cookie cookie : cookies) {
+				cookie.setValue(null);
+				cookie.setDomain("chaoxing.com");
+				cookie.setPath("/");
+				cookie.setMaxAge(0);
+				response.addCookie(cookie);
+			}
+		}
 		session.invalidate();
-		return UrlBasedViewResolver.REDIRECT_URL_PREFIX + "http://passport2.chaoxing.com/login?refer=http://i.chaoxing.com";
+		return UrlBasedViewResolver.REDIRECT_URL_PREFIX + "http://passport2.chaoxing.com/login?refer=http://crawler.basicedu.chaoxing.com/";
 	}
 
 
 	@ResponseBody
 	@RequestMapping("t")
-	public Object t(HttpServletRequest request) throws IOException {
+	public Object t(HttpServletRequest request) throws Exception {
 
-		System.err.println(request.getSession().getId());
+		String url = "http://m.ximalaya.com/58389790/album/14317967";
+//		ximalayaService.parse(url);
 
-		HttpHeaders headers = (HttpHeaders) request.getSession().getAttribute("headers");
+		url = "http://i.mooc.chaoxing.com/space/index";
+		HttpHeaders headers = getHttpHeaders(request);
 		HttpEntity httpEntity = new HttpEntity(headers);
-		String url = "http://i.mooc.chaoxing.com/space/index";
-		System.err.println(restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class));
+//		System.err.println(restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class));
+		System.err.println(request.getSession().getId());
+		System.err.println(httpEntity);
 
 		return "success";
 	}
 
+
+
+	public static HttpHeaders getHttpHeaders(HttpServletRequest request) {
+
+		HttpHeaders headers =null;
+		String uid = WebUtils.getCookie(request, "UID").getValue();
+		if (StringUtils.isNotEmpty(uid)) {
+
+			headers = (HttpHeaders) request.getSession().getAttribute("headers");
+			if (headers == null) {
+				List<String> cookieList = new ArrayList<>();
+				Cookie[] cookies = request.getCookies();
+				for (Cookie cookie : cookies) {
+					String name = cookie.getName();
+					if (name.equals("cookiecheck")) {
+						continue;
+					}
+					cookieList.add(name + "=" + cookie.getValue());
+				}
+				headers = new HttpHeaders();
+				headers.put(HttpHeaders.COOKIE, cookieList);
+				Assert.notNull(headers, "HttpHeaders is null.");
+
+				request.getSession().setAttribute("headers", headers);
+			}
+		}
+		return headers;
+
+	}
+
 }
+
 

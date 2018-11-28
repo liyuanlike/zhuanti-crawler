@@ -40,6 +40,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.github.event.TaskProcessEvent;
 import com.github.model.Feedback;
 import com.github.util.RegexUtil;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.Async;
@@ -60,71 +63,103 @@ public class XimalayaService {
     @Resource private RestTemplate restTemplate;
     @Resource private ZhuantiService zhuantiService;
     @Resource private ApplicationContext applicationContext;
+	private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    public Map<String, Object> parse(String url) {
+
+	    String responseContent = restTemplate.getForObject(url, String.class);
+	    String title = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h2>", responseContent) + "【有声版】";
+	    String coverUrl = RegexUtil.getGroup1MatchContent("\"imgUrl\":\"(.+?)\"", responseContent);
+
+
+	    List<Map<String, String>> taskList = new ArrayList<>();
+
+	    Matcher matcher = RegexUtil.matcher("<li class=[\\s\\S]+?</li>", responseContent);
+	    while (matcher.find()) {
+
+		    String liContent = matcher.group();
+		    String name = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h4>", liContent);
+		    String soundUrl = RegexUtil.getGroup1MatchContent("sound_url='(.+?)'", liContent);
+
+		    Map<String, String> task = new HashMap<>();
+		    task.put("name", name);
+		    task.put("soundUrl", soundUrl);
+		    taskList.add(task);
+	    }
+
+
+	    String albumId = url.substring(url.lastIndexOf("/") + 1);
+	    int page = 2;
+	    String pageUrl = "http://m.ximalaya.com/album/more_tracks?url=%2Falbum%2Fmore_tracks&aid={albumId}&page={page}";
+	    do {
+
+		    JSONObject pageJSONObject = restTemplate.getForObject(pageUrl, JSONObject.class, albumId, page);
+		    page = pageJSONObject.getInteger("next_page");
+
+		    String html = pageJSONObject.getString("html");
+
+		    matcher = RegexUtil.matcher("<li class=[\\s\\S]+?</li>", html);
+		    while (matcher.find()) {
+
+			    String liContent = matcher.group();
+			    String name = RegexUtil.getGroup1MatchContent("<h4.+?>(.+?)</h4>", liContent);
+			    String soundUrl = RegexUtil.getGroup1MatchContent("sound_url='(.+?)'", liContent);
+
+			    Map<String, String> task = new HashMap<>();
+			    task.put("name", name);
+			    task.put("soundUrl", soundUrl);
+			    taskList.add(task);
+		    }
+	    } while (page > 0);
+
+	    Map<String, Object> album = new HashMap<String, Object>(){{
+			put("title", title);
+			put("coverUrl", coverUrl);
+			put("taskList", taskList);
+	    }};
+
+	    Feedback feedback = new Feedback(url, title, coverUrl, null);
+	    feedback.setStatus(1);
+	    feedback.setCount(taskList.size());
+	    applicationContext.publishEvent(new TaskProcessEvent(this, feedback));
+	    logger.info("解析成功, 标题: {}, 任务数量: {}", title, taskList.size());
+
+    	return album;
+    }
+
 
     @Async
     public Feedback crawl(String uid, String url, HttpHeaders headers) {
 
-        String responseContent = restTemplate.getForObject(url, String.class);
-        String title = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h2>", responseContent) + "【有声版】";
-        String coverUrl = RegexUtil.getGroup1MatchContent("\"imgUrl\":\"(.+?)\"", responseContent);
-
-        // 创建专题
-        String courseId = zhuantiService.createZhuanti(uid, title, coverUrl);
-        String chapterId = zhuantiService.createChapter(courseId, "", title, "1", headers);
-        Feedback feedback = new Feedback(url, title, coverUrl, courseId);
-
+	    String courseId = null;
+	    Feedback feedback = new Feedback(url);
 
         try {
 
-            List<Map<String, String>> taskList = new ArrayList<>();
+	        Map<String, Object> album = parse(url);
 
-            Matcher matcher = RegexUtil.matcher("<li class=.+?</li>", responseContent);
-            while (matcher.find()) {
-
-                String liContent = matcher.group();
-                String name = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h4>", liContent);
-                String soundUrl = RegexUtil.getGroup1MatchContent("sound_url='(.+?)'", liContent);
-
-                Map<String, String> task = new HashMap<>();
-                task.put("name", name);
-                task.put("soundUrl", soundUrl);
-                taskList.add(task);
-            }
+	        String title = (String) album.get("title");
+	        String coverUrl = (String) album.get("coverUrl");
+	        List<Map<String, String>> taskList = (List<Map<String, String>>) album.get("taskList");
+	        feedback = new Feedback(url, title, coverUrl, null);
 
 
-            String albumId = url.substring(url.lastIndexOf("/") + 1);
-            int page = 2;
-            String pageUrl = "http://m.ximalaya.com/album/more_tracks?url=%2Falbum%2Fmore_tracks&aid={albumId}&page={page}";
-            do {
+	        // 创建专题
+	        courseId = zhuantiService.createZhuanti(uid, title, coverUrl);
+	        String chapterId = zhuantiService.createChapter(courseId, "", title, "1", headers);
 
-                JSONObject pageJSONObject = restTemplate.getForObject(pageUrl, JSONObject.class, albumId, page);
-                page = pageJSONObject.getInteger("next_page");
-
-                String html = pageJSONObject.getString("html");
-
-                matcher = RegexUtil.matcher("<li class=.+?</li>", html);
-                while (matcher.find()) {
-
-                    String liContent = matcher.group();
-                    String name = RegexUtil.getGroup1MatchContent("<h4.+?>(.+?)</h4>", liContent);
-                    String soundUrl = RegexUtil.getGroup1MatchContent("sound_url='(.+?)'", liContent);
-
-                    Map<String, String> task = new HashMap<>();
-                    task.put("name", name);
-                    task.put("soundUrl", soundUrl);
-                    taskList.add(task);
-                }
-
-
-            } while (page > 0);
-
-
-            for (int i = 1; i <= taskList.size(); i++) {
+            for (int i = 0; i < taskList.size(); i++) {
 
                 Map<String, String> task = taskList.get(i);
 
-                feedback.setStatus(2);
-                feedback.setCurrent(i);
+                if (i == taskList.size() - 1) {
+	                feedback.setStatus(3);
+                } else {
+	                feedback.setStatus(2);
+                }
+
+	            feedback.setCourseId(courseId);
+                feedback.setCurrent(i + 1);
                 feedback.setCurrentName(task.get("name"));
                 feedback.setCount(taskList.size());
                 applicationContext.publishEvent(new TaskProcessEvent(this, feedback));
@@ -136,8 +171,15 @@ public class XimalayaService {
             feedback.setStatus(1);
 
         } catch (Exception e) {
+
+        	if (StringUtils.isNotEmpty(courseId)) {
+		        zhuantiService.deleteZhuanti(courseId);
+	        }
+
+	        feedback.setMessage(e.getMessage());
             feedback.setStatus(0);
-            zhuantiService.deleteZhuanti(courseId);
+	        applicationContext.publishEvent(new TaskProcessEvent(this, feedback));
+	        logger.error(e.getMessage(), e);
         }
 
         return feedback;

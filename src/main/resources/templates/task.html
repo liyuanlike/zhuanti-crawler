@@ -28,22 +28,12 @@
                 stompClient.subscribe('/topic/feedback', function(message) {
                     console.log("receive: /topic/callback: " + message.body);
                     var data = JSON.parse(message.body);
-                    console.log(data.url);
-                    console.log(data.name);
-                    console.log(data.coverUrl);
-                    console.log(data.courseId);
-                    console.log(data.status);
-                    console.log(data.current);
-                    console.log(data.currentName);
-                    console.log(data.count);
-                    console.log(data.status);
-                    $('<div>').appendTo('#job').html('<div>\n' +
-                        '        <img src="' + data.coverUrl + '" width="60px;"/>\n' +
-                        '        <span>' + data.name + '</span>\n' +
-                        '        <span>' + data.currentName + '</span>\n' +
-                        '        <span>完成情况: ' + data.current + '/' + data.count + '</span>\n' +
-                        '    </div>')
-                        .show().delay(10000).fadeOut();
+                    var template = doT.template($('#feedbackTmpl').html());
+                    if (data.status == 1 || data.status == 2) {
+                        $('<div>').appendTo('#job').html(template(data)).show().delay(10000).fadeOut();
+                    } else {
+                        $('<div>').appendTo('#job').html(template(data)).show();
+                    }
                 });
             }
             function errorCallback(error) {
@@ -73,32 +63,49 @@
 
 <h2>添加抓取任务:</h2>
 
-<input id="taskUrl" type="text" style="width: 600px; height: 80px; font-size: large"/>
+<!--<input id="taskUrl" type="text" style="width: 600px; height: 80px; font-size: large"/>-->
+<textarea id="taskUrl" style="width: 600px; height: 300px; font-size: large"></textarea>
 <input id="submit" type="button" style="width: 120px; height: 80px; font-size: large" value="提交"/>
 
 <h2>任务抓取情况:</h2>
 <div id="job">
     <h2>抓取中。。。</h2>
-    <!--<div>-->
-        <!--<img src="http://fdfs.xmcdn.com/group10/M04/7F/9C/wKgDZ1YV8v3iaZJlAAJ0WqmsUHs027_web_large.jpg" width="120px;"/>-->
-        <!--<span>就这900句玩转日语【有声版】</span>-->
-        <!--<span>当前抓取: 场景11-3 聊工作</span>-->
-        <!--<span>完成情况: 12/109</span>-->
-    <!--</div>-->
+
 </div>
 
 
 </body>
-<script type="text/javascript" src="//cdn.staticfile.org/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript" src="//cdn.staticfile.org/dot/1.1.2/doT.min.js"></script>
 <script type="text/javascript">
     $(function () {
         $("#submit").click(function(){
             var taskUrl = $("#taskUrl").val();
-            $.post("/task/add", {url: taskUrl}, function (data) {
-                console.log(data);
+            $.post("/task/add", {urls: taskUrl}, function (data) {
+                $("#taskUrl").val('');
             });
         });
     });
+</script>
+
+<script id="feedbackTmpl" type="text/x-dot-template">
+    <div>
+        <img src="{{=it.coverUrl}}" width="100px;"/>
+        <a href="{{=it.url}}" target="_blank"><span>{{=it.name}}</span></a>
+
+        {{? it.status == 0 }}
+            <span>抓取失败, 错误信息: {{=it.message}}</span>
+        {{?? it.status == 1 }}
+            <span>解析成功, 章节共计: {{=it.count}}</span>
+        {{?? it.status == 2 }}
+            <span>当前抓取: {{=it.currentName}}</span>
+            <span>完成情况: {{=it.current}}/{{=it.count}}</span>
+        {{?? it.status == 3 }}
+            <span>抓取完成, 章节共计: {{=it.count}}, </span>
+            <a href="http://mooc1.chaoxing.com/zt/{{=it.courseId}}.html" target="_blank">预览</a>
+        {{? }}
+
+
+    </div>
 </script>
 </html>
 

@@ -13,16 +13,20 @@ public class Feedback {
 	private Integer current;
 	private String currentName;
 	private Integer count;
+	private String message;
+
 
 	public Feedback() {
 	}
-
+	public Feedback(String url) {
+		this.url = url;
+	}
 	public Feedback(String url, String name, String coverUrl, String courseId) {
 		this.url = url;
 		this.name = name;
 		this.coverUrl = coverUrl;
 		this.courseId = courseId;
-		this.status = 0;
+		this.status = 0; // 0抓取失败, 1解析成功, 2章节抓取成功, 3抓取完成
 	}
 
 	public String getUrl() {
@@ -87,6 +91,14 @@ public class Feedback {
 
 	public void setCurrentName(String currentName) {
 		this.currentName = currentName;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
 	}
 
 	public String toString() {

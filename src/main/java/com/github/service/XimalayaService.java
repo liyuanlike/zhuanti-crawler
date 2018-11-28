@@ -166,8 +166,6 @@ public class XimalayaService {
                 applicationContext.publishEvent(new TaskProcessEvent(this, feedback));
             }
 
-            feedback.setStatus(1);
-
         } catch (Exception e) {
 
         	if (StringUtils.isNotEmpty(courseId)) {

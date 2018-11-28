@@ -47,10 +47,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -122,10 +125,9 @@ public class ZhuantiService {
         HttpEntity httpEntity = new HttpEntity(body, headers);
 
         ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, httpEntity, String.class);
-        String content = responseEntity.getBody();
-        logger.info(responseEntity.getHeaders().toString());
+        Assert.state(responseEntity.getStatusCode() == HttpStatus.OK, responseEntity.toString());
 
-        return JSON.parseObject(content).getString("id");
+        return JSON.parseObject(responseEntity.getBody()).getString("id");
     }
 
     public void addContent(String courseId, String chapterId, String name, JSONObject sound, HttpHeaders headers) {
@@ -150,6 +152,7 @@ public class ZhuantiService {
 
         HttpEntity httpEntity = new HttpEntity(body, headers);
         restTemplate.postForObject(url, httpEntity, String.class);
+        throw new RuntimeException("sdafd");
     }
 
     public JSONObject yunpan(String uid, String url) throws IOException {
@@ -189,9 +192,13 @@ public class ZhuantiService {
         this.addContent(courseId, contentChapterId, name, sound, headers);
     }
 
-    public void deleteZhuanti(String courseId) {
-        String url = "http://yz4.chaoxing.com/subject_creation/SubjectCreationController/subjectHandle?type=delSubject&course_Id={courseId}";
-        restTemplate.getForObject(url, String.class, courseId);
+    public void deleteZhuanti(String courseId, HttpHeaders headers) {
+//        String url = "http://yz4.chaoxing.com/subject_creation/SubjectCreationController/subjectHandle?type=delSubject&course_Id={courseId}";
+        String url = "http://yz4.chaoxing.com/selfBuiltProject/deleteFolderOrSubject?id=mooc_{courseId}";
+        HttpEntity httpEntity = new HttpEntity(headers);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class, courseId);
+        Assert.state(JSON.parseObject(responseEntity.getBody()).getInteger("result") == 1, "专题: " + courseId + " 删除失败.");
+        logger.info("专题: {} 删除成功.", courseId);
     }
 
 }

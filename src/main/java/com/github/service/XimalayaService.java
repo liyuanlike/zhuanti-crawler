@@ -151,29 +151,27 @@ public class XimalayaService {
             for (int i = 0; i < taskList.size(); i++) {
 
                 Map<String, String> task = taskList.get(i);
+                zhuantiService.handleChapterContent(uid, courseId, chapterId, task.get("name"), task.get("soundUrl"), headers);
+
 
                 if (i == taskList.size() - 1) {
-	                feedback.setStatus(3);
+                    feedback.setStatus(3);
                 } else {
-	                feedback.setStatus(2);
+                    feedback.setStatus(2);
                 }
-
-	            feedback.setCourseId(courseId);
+                feedback.setCourseId(courseId);
                 feedback.setCurrent(i + 1);
                 feedback.setCurrentName(task.get("name"));
                 feedback.setCount(taskList.size());
                 applicationContext.publishEvent(new TaskProcessEvent(this, feedback));
-
-                zhuantiService.handleChapterContent(uid, courseId, chapterId, task.get("name"), task.get("soundUrl"), headers);
             }
-
 
             feedback.setStatus(1);
 
         } catch (Exception e) {
 
         	if (StringUtils.isNotEmpty(courseId)) {
-		        zhuantiService.deleteZhuanti(courseId);
+		        zhuantiService.deleteZhuanti(courseId, headers);
 	        }
 
 	        feedback.setMessage(e.getMessage());

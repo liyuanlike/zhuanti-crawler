@@ -152,7 +152,6 @@ public class ZhuantiService {
 
         HttpEntity httpEntity = new HttpEntity(body, headers);
         restTemplate.postForObject(url, httpEntity, String.class);
-        throw new RuntimeException("sdafd");
     }
 
     public JSONObject yunpan(String uid, String url) throws IOException {

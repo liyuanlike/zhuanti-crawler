@@ -70,6 +70,7 @@ public class XimalayaService {
 	    String responseContent = restTemplate.getForObject(url, String.class);
 	    String title = RegexUtil.getGroup1MatchContent("itemprop=\"name\">(.+?)</h2>", responseContent) + "【有声版】";
 	    String coverUrl = RegexUtil.getGroup1MatchContent("\"imgUrl\":\"(.+?)\"", responseContent);
+	    String description = RegexUtil.getGroup1MatchContent("\"desc\":\"(.+?)\",\"type\"", responseContent);
 
 
 	    List<Map<String, String>> taskList = new ArrayList<>();
@@ -115,6 +116,7 @@ public class XimalayaService {
 	    Map<String, Object> album = new HashMap<String, Object>(){{
 			put("title", title);
 			put("coverUrl", coverUrl);
+			put("description", description);
 			put("taskList", taskList);
 	    }};
 
@@ -140,12 +142,13 @@ public class XimalayaService {
 
 	        String title = (String) album.get("title");
 	        String coverUrl = (String) album.get("coverUrl");
+	        String description = (String) album.get("description");
 	        List<Map<String, String>> taskList = (List<Map<String, String>>) album.get("taskList");
 	        feedback = new Feedback(url, title, coverUrl, null);
 
 
 	        // 创建专题
-	        courseId = zhuantiService.createZhuanti(uid, title, coverUrl);
+	        courseId = zhuantiService.createZhuanti(uid, title, coverUrl, description);
 	        String chapterId = zhuantiService.createChapter(courseId, "", title, "1", headers);
 
             for (int i = 0; i < taskList.size(); i++) {

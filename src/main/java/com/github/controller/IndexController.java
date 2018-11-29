@@ -128,8 +128,9 @@ public class IndexController {
 	@RequestMapping("t")
 	public Object t(HttpServletRequest request) throws Exception {
 
-		String url = "http://m.ximalaya.com/58389790/album/14317967";
-//		ximalayaService.parse(url);
+		String url = "http://m.ximalaya.com/27758321/album/3803694";
+		url = "http://m.ximalaya.com/28724119/album/3041370";
+		System.err.println(ximalayaService.parse(url));
 
 		url = "http://i.mooc.chaoxing.com/space/index";
 		HttpHeaders headers = getHttpHeaders(request);

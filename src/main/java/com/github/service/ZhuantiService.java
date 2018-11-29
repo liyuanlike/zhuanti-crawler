@@ -42,6 +42,7 @@ import com.github.util.Utils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -89,14 +90,17 @@ public class ZhuantiService {
         return responseEntity.getHeaders().get("Set-Cookie");
     }
 
-    public String createZhuanti(String userId, String name, String coverUrl) {
+    public String createZhuanti(String userId, String name, String coverUrl, String description) {
 
         String url = "http://mooc1-api.chaoxing.com/RestfulAPI/addVideoCourseByUserId";
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("userId", userId);
         body.add("courseName", name);
-        body.add("courseDescription", name);
+        if (StringUtils.isNotEmpty(description) && description.length() > 255) {
+            description = description.substring(0, 255);
+        }
+        body.add("schools", description);
         body.add("courseimgurl", coverUrl);
 //        body.add("courseImage", "File");
         body.add("dtype", "ZT");

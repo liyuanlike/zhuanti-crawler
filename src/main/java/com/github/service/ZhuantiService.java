@@ -192,12 +192,19 @@ public class ZhuantiService {
     }
 
     public void deleteZhuanti(String courseId, HttpHeaders headers) {
+
+        ResponseEntity<String> responseEntity = null;
+        try {
 //        String url = "http://yz4.chaoxing.com/subject_creation/SubjectCreationController/subjectHandle?type=delSubject&course_Id={courseId}";
-        String url = "http://yz4.chaoxing.com/selfBuiltProject/deleteFolderOrSubject?id=mooc_{courseId}";
-        HttpEntity httpEntity = new HttpEntity(headers);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class, courseId);
-        Assert.state(JSON.parseObject(responseEntity.getBody()).getInteger("result") == 1, "专题: " + courseId + " 删除失败.");
-        logger.info("专题: {} 删除成功.", courseId);
+            String url = "http://yz4.chaoxing.com/selfBuiltProject/deleteFolderOrSubject?id=mooc_{courseId}";
+            HttpEntity httpEntity = new HttpEntity(headers);
+            responseEntity = restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class, courseId);
+            Assert.state(JSON.parseObject(responseEntity.getBody()).getInteger("result") == 1, "专题: " + courseId + " 删除失败.");
+            logger.info("专题: {} 删除成功.", courseId);
+        } catch (Exception e) {
+            logger.error(responseEntity.getHeaders().toString());
+            logger.error(responseEntity.getBody());
+        }
     }
 
 }

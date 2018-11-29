@@ -32,7 +32,7 @@ public class ThreadPoolConfig extends AsyncConfigurerSupport implements Scheduli
 	@Override
 	public void afterPropertiesSet() {
 		taskScheduler = new ThreadPoolTaskScheduler();
-		taskScheduler.setPoolSize(Runtime.getRuntime().availableProcessors() * 2);
+		taskScheduler.setPoolSize(Runtime.getRuntime().availableProcessors() * 32);
 		taskScheduler.setAwaitTerminationSeconds(60 * 60);
 		taskScheduler.setThreadNamePrefix("executor-");
 		taskScheduler.setWaitForTasksToCompleteOnShutdown(true);

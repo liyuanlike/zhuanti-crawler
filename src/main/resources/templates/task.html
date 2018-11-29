@@ -29,8 +29,10 @@
                     console.log("receive: /topic/callback: " + message.body);
                     var data = JSON.parse(message.body);
                     var template = doT.template($('#feedbackTmpl').html());
-                    if (data.status == 1 || data.status == 2) {
-                        $('<div>').appendTo('#job').html(template(data)).show().delay(10000).fadeOut();
+                    if (data.status == 1) {
+                        $('<div>').appendTo('#job').html(template(data)).show().delay(60000).fadeOut();
+                    } else if (data.status == 2) {
+                        $('<div>').appendTo('#job').html(template(data)).show().delay(8000).fadeOut();
                     } else {
                         $('<div>').appendTo('#job').html(template(data)).show();
                     }
@@ -102,6 +104,7 @@
         {{?? it.status == 3 }}
             <span>抓取完成, 章节共计: {{=it.count}}, </span>
             <a href="http://mooc1.chaoxing.com/zt/{{=it.courseId}}.html" target="_blank">预览</a>
+            <a href="https://mooc1.chaoxing.com/mycourse/teachercourse?moocId={{=it.courseId}}" target="_blank">管理</a>
         {{? }}
 
 

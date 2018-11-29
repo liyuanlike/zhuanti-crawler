@@ -120,7 +120,7 @@ public class IndexController {
 			}
 		}
 		session.invalidate();
-		return UrlBasedViewResolver.REDIRECT_URL_PREFIX + "http://passport2.chaoxing.com/login?refer=http://crawler.basicedu.chaoxing.com/";
+		return UrlBasedViewResolver.REDIRECT_URL_PREFIX + "http://passport2.chaoxing.com/wlogin?refer=http://crawler.basicedu.chaoxing.com/";
 	}
 
 
